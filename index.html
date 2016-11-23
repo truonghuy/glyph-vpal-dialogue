@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    
+    /* 
+        layout  
+    */
+    div.whole{
+        width: 1800px;
+    }
+    
+    hr{
+        border: 1px solid #000;
+    }
+    div.left1 {
+        color: #006;
+        float: left;
+        width: 890px;
+        border: 1px solid #000;
+    }
+    div.right1 {
+        color: #600;
+        float: right;
+        width: 890px;
+        border: 1px solid #000;
+    }
+    div.mymargin{
+        margin: 10px 10px 10px;
+    }
+    
+    /* State Graph */
+    .statenode {
+        stroke-opacity: .7;
+        fill-opacity: .7;
+    }
+    /*
+        Arrow colors
+    #000062;
+    */
+    marker#start {
+        fill: green;
+    }
+    marker#end {
+        fill: #680000;
+    }
+    marker#mid {
+        fill: #5E4E00;
+    }
+    /*
+    The part of the graph that consist of crowd behavior. Defined as a class
+    */
+    marker {
+        stroke-opacity: .4;
+        fill-opacity: .4;
+    }
+    /*
+    The part of the graph that consist of a selected path.
+    */
+    
+    .start {
+        stroke: #000062;
+        fill: #1962FF;
+    }
+    .mid {
+        stroke: #5E4E00;
+        fill: #F5FFA3;
+    }
+    .bonus {
+        stroke: green;
+    }
+    .end {
+        stroke: #680000;
+        fill: #B74D3D;
+    }
+    
+    .statelink{
+        stroke-opacity: .7;
+/*        fill-opacity: 0;*/
+        fill: transparent;
+    }
+    /* selected placed here will overshadow start, mid and end */
+    .selected {
+        stroke: #FF0509;
+        stroke-opacity: 1;
+    }
+    
+    /* Behavior graph */
+    
+    .behaviornode,
+    .behaviorlink {
+        stroke-opacity: .8;
+        fill-opacity: .8;
+        stroke-width: 1;
+        stroke: #FFFAC9;
+    }
+    
+    .complete{
+        fill: #88F37F;
+        stroke:green;
+    }
+    
+    .incomplete{
+        stroke: #5E4E00;
+        fill: #FF77DF;
+    }
+    
+    div.popup {
+      position: absolute;
+      border: 1px solid #bbbbbb;
+      color: #444444;
+      background-color: white;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      pointer-events: none;
+    }
+    div.popup table{
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+    }
+    div.popup hr{
+      margin: 5px 0px;
+      border: none;
+      height: 1px;
+      color: #cccccc;
+      background-color: #cccccc;
+    }
+    div.popup p.services{
+      font-size: 11px;
+      line-height: 17px;
+      padding: 0px;
+      margin: 0px;
+    }
+</style>
+
+<body>
+    <!-- Load the latest release. If that does not work, load our own script -->
+    
+    <div class="whole">
+    <div class="mymargin" >
+        The visualization here shows the data extracted from dialogues with NPC Johnson.
+<!--        Enter the dialog name to visualize (currently only has Johnson).-->
+<!--        <input type="text" id="level" onchange="updateLevel()">-->
+<!--        <input type="text" id="level">-->
+<!--        <input type="button" id="setLevel" value="Set Level" onclick="updateLevel()" />-->
+        Increase/decrease graph opacity 
+        
+        <input type="button" id="incrementOpacity" value="++" onclick="incrementOpacity()" />
+        <input type="button" id="decrementOpacity" value="--" onclick="decrementOpacity()" />
+        Freeze graph layout <input type="button" id="freezeLayout" value="Freeze/Unfreeze" onclick="freezeLayout()" />
+    </div>
+    
+        
+        
+        
+    <div class="left1" id="state-graph-div">
+        <div class="mymargin">
+            <b>Graph Controls - </b>
+            
+             Increase/decrease graph size 
+        
+        <input type="button" id="incrementGraph" value="++" onclick="incrementGraph(0)" />
+        <input type="button" id="decrementGraph" value="--" onclick="decrementGraph(0)" />
+            Unfix/Fix all nodes 
+        <input type="button" value="Unfix" onclick="unfixAllNodes(0)" />
+        <input type="button" value="Fix" onclick="fixAllNodes(0)" />
+            <hr/>
+            Enter one or many user IDs to highlight (e.g. 201;311;312) <input type="text" id="userID">
+            <input type="button" id="highlightUserID" value="Highlight" onclick="highlightUserID()" /> 
+<!--
+            Color-code links? (Red: Collect key, Green: Collect bonus) <input type="checkbox" name="color-code" onchange="updateColor()"/>
+            
+-->
+            <br/>
+            Enter K
+            <input type="text" id="number-highlight">
+            <input type="button" id="toggleFrequentTrajectories" value="Highlight K most frequent" onclick="toggleHighlightFreqTrajectories()" />
+            <input type="button" id="toggleKthTrajectories" value="Highlight K-th most frequent" onclick="toggleKthTrajectories()" />
+            <input type="button" id="clearHighlight" value="Clear all highlights" onclick="clearHighlight()" /><br/>
+            <hr/>
+
+                <b>Level Info</b> -
+             ID = <label id="level-id"></label>:
+            Number of state nodes: <b><label id="num-statenodes"></label></b> ,
+            Number of players: <b><label id="num-players"></label></b> <br/>
+<!--            <hr/>-->
+<!--
+            <b>State Node Info</b> (updated when node selected) - ID = <label id="statenode-id"></label> <br> 
+            <b>NPC Text:</b> <label id="num-keys-collected"></label><br/>
+            Player IDs visiting this node (<label id="num-players-state"></label> unique players): <label id="players-state"></label><br/>
+-->
+<!--
+            <b>Action Link Info</b> - Response Text: <label id="statelink-act"></label><br/>
+            Player IDs traversing this link (<label id="num-players-statelink"></label> unique players): <label id="players-statelink"></label><br/>
+-->
+        </div>
+    </div>
+        
+        
+        
+    <div class="right1" id="behavior-graph-div">
+        <div class="mymargin">
+            <b>Graph Controls - </b>
+            
+             Increase/decrease graph size 
+        
+        <input type="button" value="++" onclick="incrementGraph(1)" />
+        <input type="button" value="--" onclick="decrementGraph(1)" />
+            Unfix/Fix all nodes 
+        <input type="button" value="Unfix" onclick="unfixAllNodes(1)" />
+        <input type="button" value="Fix" onclick="fixAllNodes(1)" />
+        Toggle showing links <input type="button" id="toggleShowLinks" value="Show/Hide" onclick="toggleShowLinks()" />
+            <hr/>
+        Enter more or many sequence indices to highlight (e.g. 0;1;5;7)
+        <input type="text" id="playtrace-index">
+        <input type="button" id="highlightNodeID" value="Highlight" onclick="highlightNodeID()" />
+<!--        <br/>-->
+<!--
+        Enter sequence index to show info
+        <input type="text" id="playtrace-show-info">
+        <input type="button" value="Show" onclick="showInfoNodeID()" />
+-->
+        
+        <input type="button" value="Clear all highlights" onclick="clearHighlight()" />
+            <br/>
+            <br/>
+            <hr/>
+        <b>Level Info</b> -
+            
+        Total number of sequences (nodes): <b><label id="num-nodes"></label></b> 
+        with <label id="num-complete"></label> <span style="color:green"><b>complete (green nodes)</b></span>, and
+        <label id="num-incomplete"></label> <span style="color:pink"><b>incomplete (pink nodes)</b></span><br/>  
+<!--        Number of Players <label id="num-players"></label> <br/><br/>-->
+<!--
+        <hr/>
+        
+        <b>Sequence Node Info</b> (updated when node selected) - ID = <label id="selected-node-index"></label> <br/>
+        Player IDs having this pattern (<label id="num-players-sequence"></label> players): <label id="players-sequence"></label><br/>
+        Complete sequence of actions: <span style="color:red"><b><label id="infobox"></label></b></span><br/>
+-->
+<!--
+        Shortened actions (no move actions): <span style="color:blue"><b><label id="infobox-short"></label></b></span><br/> 
+        "m X t(s)" = move some cog X turns; 
+        "c X k(s)", "c X b(es)" = collect X keys/bonuses<br/>
+-->
+        </div>
+        
+        
+    </div>
+    </div>
+    
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script>
+        window.d3 || document.write('<script src="libs/d3.min.js">\x3C/script>')
+    </script>
+
+    <script src="libs/underscore-min.js"></script>
+
+    <script>
+        
+        var fill = d3.scale.category10();
+//        var level = "Johnson";
+         // my graph data
+        var data;
+        
+        var minNodeSize = 5,
+            maxNodeSize = 30,
+            padding = 1.5,
+            svgX = 0,
+            svgY = 200;
+        
+        var displayingFreq = false;
+        
+        var width = 883;
+        var div, svg;
+        
+        var userIDLengthLimit = 10;
+        
+        //---------------------
+        var dd =[
+            "Johnson",
+                ];
+        
+        var selectUI = d3.select("#level").append("select").attr("id", "drop-down").on("change", updateLevel);
+        var options = selectUI.selectAll('option').data(dd); // Data join
+         // Enter selection
+        options.enter()
+            .append("option")
+            .text(function (d) {
+                return d;
+            });
+        selectUI.property("value", dd[1]);
+        /************************ Pop up *********************************/
+        var prevStroke, prevFill, prevFillOpa, prevStrokeOpa;
+        var statenodePopup = d3.select("div#state-graph-div").append("div")
+            .attr("class", "popup")
+            .style("width", "400px")
+            .style("max-width", "400px")
+            .style("opacity", 0.0);
+        
+        var generateStateNodePopup = function(d){
+            var out = "NodeID = <b>" + d.id + "</b>";
+            out += "<br><b>NPC:</b> " + d.details ;
+            out += "<br><b>"+ d.user_ids.length + " players: </b>";
+            if (d.user_ids.length <= userIDLengthLimit)
+                out += d.user_ids;
+            else out += d.user_ids.slice(0,userIDLengthLimit) + ",....";
+            return out;
+        }
+
+        var stateNodeMouseOver = function(d,i){
+            statenodePopup.style("opacity", 1.0)
+              .html(generateStateNodePopup(d));
+            
+            archiveStyle(this);
+            
+            d3.select(this).style("stroke-opacity", 1.0).style("stroke", "red")
+            .style("fill-opacity", 1.0)
+            .style("fill", "red")
+            ;
+          }
+
+        var stateNodeMouseOut = function(d,i){
+            restoreStyle(this);
+        }
+        
+        //----------------- link
+        var statelinkPopup = d3.select("div#state-graph-div").append("div")
+            .attr("class", "popup")
+            .style("width", "400px")
+            .style("max-width", "400px")
+        
+            .style("left", "450px")
+//        .style("top", "400px")
+            .style("opacity", 0.0);
+        
+        
+        var generateStateLinkPopup = function(d){        
+            var out = "ActionID = <b>" + d.id + "</b>";
+            out += "<br><b>Dialog choice:</b> " + d.text;
+//            out += "<br><b>NPC:</b> " + d.details ;
+            out += "<br><b>"+ d.user_ids.length + " players: </b>";
+            if (d.user_ids.length <= userIDLengthLimit)
+                out += d.user_ids;
+            else out += d.user_ids.slice(0,userIDLengthLimit) + ",....";
+            return out;
+        }
+
+        var stateLinkMouseOver = function(d,i){
+            statelinkPopup.style("opacity", 1.0)
+              .html(generateStateLinkPopup(d));
+            
+            prevStroke = d3.select(this).style("stroke");
+            prevStrokeOpa = d3.select(this).style("stroke-opacity");
+//            prevFill = d3.select(this).style("fill");
+            d3.select(this).style("stroke-opacity", 1.0).style("stroke", "red");
+          }
+
+        var stateLinkMouseOut = function(d,i){
+//            statelinkPopup.style("opacity", 0.0);
+            d3.select(this).style("stroke-opacity", prevStrokeOpa).style("stroke", prevStroke);
+        }
+        
+
+        //----------------- behavior node
+        var behaviornodePopup = d3.select("div#behavior-graph-div").append("div")
+            .attr("class", "popup")
+
+//            .style("left", "100px")
+            .style("width", "890px")
+//            .style("width", "400px")
+            .style("max-width", "870px")
+        
+            .style("opacity", 0.0);
+        
+        var fullTracePopup = d3.select("div#behavior-graph-div").append("div")
+            .attr("class", "popup")
+
+//            .style("left", "100px")
+            .style("width", "270px")
+//            .style("width", "400px")
+            .style("max-width", "270px")
+            .style("left", "1600px")
+        
+            .style("opacity", 0.0);
+        
+        var generateBehaviorNodePopup = function(d){
+                                          
+            var out = "";
+            if (d.completed)
+                out = "<b>Completed Pattern</b> - ";
+            else
+                out = "<b>Incomplete Pattern</b> - ";
+            out += "Popularity = <b>" + d.id + "</b>";
+//            out += "<hr/>" +d.full_form+ "<hr/>";
+            out += "<br><b>Pattern:</b> " + d.trajectory;
+            out += "<br><b>"+ d.user_ids.length + " players: </b>";
+            if (d.user_ids.length <= userIDLengthLimit)
+                out += d.user_ids;
+            else out += d.user_ids.slice(0,userIDLengthLimit) + ",....";
+            return out;
+        }
+
+        var generateFullTracePopup = function(d){
+//            return "<p style=\"font-size:12px\"><b>___Full Dialog___</b><br>" +d.full_form+"</p>";
+            return "<b>____ Full Dialog, Pattern " + d.id +" ____</b><br>" +d.full_form;
+        }
+        
+        var behaviorNodeMouseOver = function(d,i){
+            behaviornodePopup.style("opacity", 1.0)
+              .html(generateBehaviorNodePopup(d));
+            
+            fullTracePopup.style("opacity", 1.0)
+              .html(generateFullTracePopup(d));
+
+            archiveStyle(this);
+            
+            d3.select(this)
+            .style("fill-opacity", 1.0)
+            .style("fill", "red")
+            .style("stroke-opacity", 1.0)
+            .style("stroke", "red");
+          }
+        
+        // ------------------------- full form behavior trace
+        
+//        
+//
+//        var behaviorNodeClick = function(d,i){
+//            fullTracePopup.style("opacity", 1.0)
+//              .html(generateFullTracePopup(d));
+////            d3.select(this)
+////            .style("fill-opacity", 1.0)
+////            .style("fill", "red")
+////            .style("stroke-opacity", 1.0)
+////            .style("stroke", "red");
+//          }
+//        var behaviorFullTraceClear = function(){
+//            fullTracePopup.style("opacity", 0);
+//        }
+//        
+        /******************** State graph **********************************/
+
+        var stateheight = 810;
+        var stateforce = d3.layout.force()
+            .charge(-2000)
+            .linkDistance(10)
+            .size([width, stateheight])
+            .on("tick", statetick);
+
+//        div = d3.select("body").append("div").attr("class", "left1");
+        div = d3.select("#state-graph-div").append("div");//.attr("class", "left1");
+        
+        svg = div.append("svg")
+            .attr("width", width)
+            .attr("height", stateheight)
+//            .attr("x", svgX)
+            //.attr("y", svgY)
+            .style("border", "4px solid #000")
+            .attr("pointer-events", "all")
+            .call(d3.behavior.zoom().on("zoom", stateZoomPan));
+
+
+         // the graph components (nodes and links)
+        var stateSvgContainer = svg.append("g").attr("id", "stategraph_container");
+        
+
+        var statelink = stateSvgContainer.append("g").attr("id", "statelink_container").selectAll(".statelink"),
+            statenode = stateSvgContainer.append("g").attr("id", "statenode_container").selectAll(".statenode");
+
+         // Define markers
+         // Per-type markers, as they don't inherit styles.
+        svg.append("defs").selectAll("marker")
+            .data(["start", "mid", "end"])
+            .enter().append("marker")
+            .attr("id", function (d) {
+                return d;
+            })
+         // the region viewable in this marker
+        .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 15)
+            .attr("refY", 0)
+            .attr("markerWidth", 2)
+            .attr("markerHeight", 2)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+         // for sticky drag
+        var statedrag = stateforce.drag().on("dragstart", dragstart);
+
+        /********************* Behavior graph ******************************/
+        
+        
+        var behaviorheight = 810;
+
+        var minDistance = 10,
+            maxDistance = 500;
+        
+        var behaviorforce = d3.layout.force()
+            .charge(-50)
+            .linkDistance(distanceMapping)
+            .size([width, behaviorheight])
+            .on("tick", behaviortick);
+
+//        div = d3.select("body").append("div").attr("class", "right1");
+        div = d3.select("#behavior-graph-div").append("div");//.attr("class", "left1");
+        
+        svg = div.append("svg")
+            .attr("width", width)
+            .attr("height", behaviorheight)
+//            .attr("x", svgX)
+//            .attr("y", svgY)
+            .style("border", "4px solid #000")
+            .attr("pointer-events", "all")
+            .call(d3.behavior.zoom().on("zoom", behaviorZoomPan));
+
+
+         // the graph components (nodes and links)
+        var behaviorSvgContainer = svg.append("g").attr("id", "graph_container");
+
+        var behaviorlink = behaviorSvgContainer.append("g").attr("id", "link_container").selectAll(".behaviorlink"),
+            behaviornode = behaviorSvgContainer.append("g").attr("id", "node_container").selectAll(".behaviornode");
+
+
+         // for sticky drag
+        var behaviordrag = behaviorforce.drag()
+            .on("dragstart", behaviorDragstart);
+        
+        /****************** Load level *******************************/
+        
+         // graph stores the loaded data
+        d3.json(getCurrentFilename(), updateJSON);
+
+
+         //--------------- Functions ------------
+        function updateJSON(error, jsonData) {
+
+            if (error) {
+                alert("Level does not exist!");
+                return console.warn(error);
+            }
+            data = jsonData;
+            
+            
+            // update info on num statenodes and players
+            d3.select("#num-statenodes").text(data.nodes.length);
+//            d3.selectAll("#num-keys").text(data.level_info.keys.length);
+//            d3.selectAll("#num-bonuses").text(data.level_info.bonuses.length);
+//            d3.select("#num-cogs").text(data.level_info.gears.length);
+//            d3.selectAll("#keys-info").text(data.level_info.keys);
+//            d3.selectAll("#bonus-info").text(bonusArrayToString(data.level_info.bonuses));
+//            d3.select("#cogs-info").text(data.level_info.gears);
+            
+//            d3.select("#num-players").text(data.num_users);
+            
+            
+            // construct node map
+            var nodeMap = {};
+            data.nodes.forEach(function (x) {
+                nodeMap[x.id] = x;
+                x.user_ids = _.uniq(x.user_ids);
+            });
+            data.links.forEach(function (x) {
+                x.source = nodeMap[x.source];
+                x.target = nodeMap[x.target];
+                x.user_ids = _.uniq(x.user_ids);
+            });
+            
+            visualizeStateData();
+            
+            // update info on num nodes and players
+            d3.select("#num-nodes").text(data.trajectories.length);
+            d3.selectAll("#num-players").text(data.num_users);
+            d3.select("#num-complete").text(data.num_complete);
+            d3.select("#num-incomplete").text(data.trajectories.length-data.num_complete);
+            
+            visualizeBehaviorData();
+            
+        }
+        
+
+        function getCurrentFilename() {
+            return "data/" + d3.select("#drop-down").node().value + "_graph.json";
+        }
+
+
+        function updateLevel() {
+            clearHighlight();
+            d3.json(getCurrentFilename(), updateJSON);
+        }
+
+        /******************** State graph **********************************/
+        var linearStateNodeScale;
+
+        function visualizeStateData() {
+            linearStateNodeScale = getStateNodeScale(data.nodes);
+
+            stateforce.nodes(data.nodes)
+            .links(data.links);
+
+            statelink = statelink.data(data.links);
+            statenode = statenode.data(data.nodes);
+
+            // UPDATE --------------------
+            statelink.select("title").text(function (d) {
+//                return d.user_ids;
+                return d.text;
+//                return d.action_int;
+            });
+            statelink.attr("id", function (d, i) {
+                return 'statelink' + d.id;
+            })
+            
+            .attr("class", updateLinkClass)
+            .style("stroke-width", getStrokeWidth)
+                .attr("marker-end", function (d) {
+                    
+//                    return "url(#" + d.type + ")";
+                return "url(#" + getLinkTypeFromMeaning(d) + ")";
+                
+                });
+            
+            
+            statenode.attr("id", function (d, i) {
+                return 'statenode' + d.id;
+            })
+                .attr("class", function(d){
+                    return "statenode " + d.state_type;
+                })
+            .select("circle")
+//                .attr("class", function(d){
+//                    if (d.completed)
+//                        return "complete";
+//                    return "incomplete";
+//                })
+                .attr("r", function (d) {
+                    return linearStateNodeScale(d.visits);
+                });
+
+            statenode.select("text")
+            .attr("dx", function(d){
+                        return linearScaleBehaviorNode(d.user_ids.length) + 3;
+                    })
+            .text(function(d,i) { return i;});
+
+
+//            statenode.attr("id", function (d, i) {
+//                return 'statenode' + d.id;
+//            })
+//                .attr("class", function (d) {
+//                    return "statenode " + d.state_type;
+//                })
+//                .attr("r", function (d) {
+//                    return linearStateNodeScale(d.visits);
+//                });
+//
+//            statenode.select("title").text(function (d) {
+////                return d.user_ids;
+//                return d.id;
+//            });
+
+
+            // ENTER ----------------
+            var statelinkGroup = statelink.enter().append("path") //("line")
+                .attr("class", updateLinkClass)
+                .attr("id", function (d, i) {
+                    return 'statelink' + d.id;
+                })
+                //                .style("stroke", getLineColor)
+                .style("stroke-width", getStrokeWidth)
+                .attr("marker-end", function (d) {
+//                    return "url(#" + d.type + ")";
+                return "url(#" + getLinkTypeFromMeaning(d) + ")";
+                })
+                .on("mouseover", stateLinkMouseOver)
+                .on("mouseout", stateLinkMouseOut)
+            .on("click", stateLinkClicked);
+            ;
+
+
+            statelinkGroup.append("title").text(function (d) {
+//                return d.user_ids;
+                
+                return d.meaning;
+//                return d.action_int;
+            });
+
+            statelink.exit().remove();
+            
+            
+            var nodeEnter = statenode.enter().append("g")
+//                .attr("class", "statenode")
+                .attr("class", function(d){
+                    return "statenode " + d.state_type;
+                })
+                .attr("id", function (d, i) {
+                    return 'statenode' + d.id;
+                }).on("dblclick", dblclick)
+                .on("mouseover", stateNodeMouseOver)
+                .on("mouseout", stateNodeMouseOut)            
+                .call(statedrag);
+            
+            nodeEnter.append("circle")
+                .attr("r", function (d) {
+                    return linearStateNodeScale(d.visits);
+                });
+
+            nodeEnter.append("text")
+                  .attr("dx", function(d){
+                        return linearStateNodeScale(d.visits) + 3;
+                    })
+                  .attr("dy", ".35em")
+                  .text(function(d,i) { 
+//                return i;
+                    return d.details.substring(0,20);                    
+                    });
+            
+//
+//            var statenodeGroup = statenode.enter().append("circle")
+//                .attr("class", function (d) {
+//                    return "statenode " + d.state_type;
+//                })
+//                .attr("id", function (d, i) {
+//                    return 'statenode' + d.id;
+//                })
+//                .attr("r", function (d) {
+//                    if (d.visits === undefined)
+//                        return 0;
+//                    return linearStateNodeScale(d.visits);
+//                })
+//                .on("dblclick", dblclick)
+//                .call(statedrag);
+//
+//            statenodeGroup.append("title").text(function (d) {
+////                return d.user_ids;
+//                return d.id;
+//            });
+
+            statenode.exit().remove();
+
+            stateforce.start();
+
+        }
+
+        function statetick() {
+            // statelink 
+//            statelink.attr("x1", function (d) {
+//                return d.source.x;
+//            })
+//                .attr("y1", function (d) {
+//                    return d.source.y;
+//                })
+//                .attr("x2", function (d) {
+//                    return d.target.x;
+//                })
+//                .attr("y2", function (d) {
+//                    return d.target.y;
+//                });
+            
+            statelink.attr("d", function(d) {
+              var x1 = d.source.x,
+                  y1 = d.source.y,
+                  x2 = d.target.x,
+                  y2 = d.target.y,
+                  dx = x2 - x1,
+                  dy = y2 - y1,
+                  dr = Math.sqrt(dx * dx + dy * dy),
+
+                  // Defaults for normal edge.
+                  drx = dr,
+                  dry = dr,
+                  xRotation = 0, // degrees
+                  largeArc = 0, // 1 or 0
+                  sweep = 1; // 1 or 0
+
+                  // Self edge.
+                  if ( x1 === x2 && y1 === y2 ) {
+                    // Fiddle with this angle to get loop oriented.
+                    xRotation = -45;
+
+                    // Needs to be 1.
+                    largeArc = 1;
+
+                    // Change sweep to change orientation of loop. 
+                    //sweep = 0;
+
+                    // Make drx and dry different to get an ellipse
+                    // instead of a circle.
+                    drx = 30;
+                    dry = 20;
+
+                    // For whatever reason the arc collapses to a point if the beginning
+                    // and ending points of the arc are the same, so kludge it.
+                    x2 = x2 + 1;
+                    y2 = y2 + 1;
+                  } 
+
+             return "M" + x1 + "," + y1 + "A" + drx + "," + dry + " " + xRotation + "," + largeArc + "," + sweep + " " + x2 + "," + y2;
+            });
+
+
+            // statenode
+            statenode.each(collide(.5))
+            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+//                .attr("cx", function (d) {
+//                    return d.x;
+//                })
+//                .attr("cy", function (d) {
+//                    return d.y;
+//                });
+        }
+
+        function getStrokeWidth(d) {
+            if (d.visits === undefined || d.visits == 0)
+                return 1;
+            return d.visits/2; 
+//            return Math.sqrt(d.visits);
+        }
+        function updateLinkClass(d) {
+            var meaning = getLinkTypeFromMeaning(d);
+            if (meaning == 'start')
+                return "statelink bonus";
+            return "statelink " + meaning;
+        }
+        
+        //
+        function getLinkTypeFromMeaning(meaning){
+            
+            // collect key
+//            if (meaning.indexOf('k') != -1)
+//                return "end";
+//            if (meaning.indexOf('b') != -1)
+//                return "start";
+//            
+            return "mid";
+            
+        }
+
+         // set minVisits and maxVisits
+        function getStateNodeScale(dataset) {
+            var minVisits = d3.min(dataset, function (d) {
+                if (d.visits === undefined)
+                    d.visits = 1;
+                
+                return d.visits;
+            });
+            var maxVisits = d3.max(dataset, function (d) {
+                if (d.visits === undefined)
+                    d.visits = 1;
+                return d.visits;
+            });
+
+            return d3.scale.linear()
+                .domain([minVisits, maxVisits])
+                .range([minNodeSize, maxNodeSize]);
+        }
+
+         // collision detection
+         // Resolves collisions between d and all other circles.
+        function collide(alpha) {
+            var quadtree = d3.geom.quadtree(data.nodes);
+            return function (d) {
+                // the radius of the current node
+                var d_radius = linearStateNodeScale(d.visits);
+
+
+                var r = d_radius + maxNodeSize + padding,
+                    nx1 = d.x - r,
+                    nx2 = d.x + r,
+                    ny1 = d.y - r,
+                    ny2 = d.y + r;
+
+                quadtree.visit(function (quad, x1, y1, x2, y2) {
+                    if (quad.point && (quad.point !== d)) {
+                        var x = d.x - quad.point.x,
+                            y = d.y - quad.point.y,
+                            l = Math.sqrt(x * x + y * y),
+                            r = d_radius + linearStateNodeScale(quad.point.visits) + padding;
+                        if (l < r) {
+                            l = (l - r) / l * alpha; // padding
+                            d.x -= x *= l;
+                            d.y -= y *= l;
+                            quad.point.x += x;
+                            quad.point.y += y;
+                        }
+                    }
+                    return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+                });
+            };
+        }
+
+
+        function stateZoomPan() {
+            stateSvgContainer.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        }
+        function behaviorZoomPan() {
+            behaviorSvgContainer.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        }
+
+         // for sticky drag
+         // This callback can access this (the DOM object it is called upon)
+        function dblclick(d) {
+            // somehow this works, but 
+            // d3.event.sourceEvent.stopPropagation(); does not
+
+            d3.event.stopPropagation();
+            d3.select(this).classed("fixed", d.fixed = false);
+        }
+
+        function dragstart(d) {
+            d3.event.sourceEvent.stopPropagation();
+            d3.select(this).classed("fixed", d.fixed = true);
+            
+            // show state node info
+            stateDisplayInfo(d);
+        }
+ 
+        // display info in textboxes
+        function stateDisplayInfo(d){
+            
+            d3.select("#statenode-id").text(d.id);
+            d3.select("#num-keys-collected").text(d.details);
+//            d3.select("#num-bonuses-collected").text(getNumTrue(d.details.items));
+            
+            d3.select("#num-players-state").text(d.user_ids.length);
+            if (d.user_ids.length <= userIDLengthLimit)
+                d3.select("#players-state").text(d.user_ids);
+            else d3.select("#players-state").text(d.user_ids.slice(0,userIDLengthLimit) + ",....");
+        }
+        
+        // display link info in textboxes
+        function stateLinkClicked(d){
+            
+            d3.select("#statelink-act").text(d.text);
+//            d3.select("#statelink-meaning").text(d.text);
+            
+            d3.select("#num-players-statelink").text(d.user_ids.length);
+            if (d.user_ids.length <= userIDLengthLimit)
+                d3.select("#players-statelink").text(d.user_ids);
+            else d3.select("#players-statelink").text(d.user_ids.slice(0,userIDLengthLimit) + ",....");
+            
+            
+//            <b>Action Link Info</b> (updated when link selected) - Position displacement: <label id="statelink-act"></label>,
+//            effect: <label id="statelink-meaning"></label> <br/>
+//            Player IDs traversing this link (<label id="num-players-statelink"></label> players): <label id="players-statelink"></label><br/>
+        }
+        
+        function getNumTrue(itemArray){
+            var result = 0;
+            for (var i=0; i<itemArray.length; i++){
+                if (itemArray[i][2]) result++;
+            }
+            return result;
+        }
+        
+        // index 0: start, index 1: end
+        function setNodeForFreq(index){
+            var value = d3.select("#statenode-id").text();
+            
+            if (index == 0){
+                d3.select("#freq-start-node").node().value = value;
+            }
+            else d3.select("#freq-end-node").node().value = value;
+        }
+        
+        
+        /*************************** Behavior graph *******************/
+        
+        var linearScaleBehaviorNode, distanceBehaviorScale;
+
+        var presetBehaviorNodes = function(nodes){
+            //            margin = 100;
+            maxX = 890;
+
+            //            nodeSpacing = (maxX - 2*margin)/8;
+            //            yNodeSpacing = 200;
+
+            // Prefix positions of start and end nodes------
+            nodes[0].fixed = true;
+            nodes[0].x = maxX/2;
+            nodes[0].y = stateheight/2;
+
+        };
+        
+        function visualizeBehaviorData() {
+            linearScaleBehaviorNode = getBehaviorNodeScale(data.trajectories);
+            distanceBehaviorScale = getBehaviorDistanceScale(data.traj_similarity);
+            
+            
+            presetBehaviorNodes(data.trajectories);
+
+            behaviorforce.nodes(data.trajectories) 
+            .links(data.traj_similarity);
+
+            behaviorlink = behaviorlink.data(data.traj_similarity);
+            behaviornode = behaviornode.data(data.trajectories);
+            
+            behaviorlink.enter().append("line")
+                .attr("class", "behaviorlink")
+                .attr("id", function (d, i) {
+                    return 'behaviorlink' + d.id;
+                });
+
+            
+            var nodeEnter = behaviornode.enter().append("g")
+//                .attr("class", "behaviornode")
+                .attr("class", function(d){
+                    if (d.completed)
+                        return "behaviornode complete";
+                    return "behaviornode incomplete";
+                })
+                .attr("id", function (d, i) {
+                    return 'behaviornode' + i;
+                }).on("dblclick", dblclick)            
+                .on("mouseover", behaviorNodeMouseOver)
+                .on("mouseout", stateNodeMouseOut)
+                .call(behaviordrag);
+            
+            nodeEnter.append("circle")
+                .attr("r", function (d) {
+                    return linearScaleBehaviorNode(d.user_ids.length);
+                });
+//
+//            nodeEnter.append("title").text(function (d) {
+//                return d.user_ids;
+////                return d.id;
+//            });
+            nodeEnter.append("text")
+                  .attr("dx", function(d){
+                        return linearScaleBehaviorNode(d.user_ids.length) + 3;
+                    })
+                  .attr("dy", ".35em")
+                  .text(function(d,i) { return i;});
+            
+            // UPDATE --------------------
+            behaviorlink.attr("id", function (d, i) {
+                return 'behaviorlink' + d.id;
+            })
+            .attr("class", "behaviorlink");
+
+            behaviornode.attr("id", function (d, i) {
+                return 'behaviornode' + i;
+            })
+             //                .attr("class", "behaviornode")
+                .attr("class", function(d){
+                    if (d.completed)
+                        return "behaviornode complete";
+                    return "behaviornode incomplete";
+                })
+            .select("circle")
+//                .attr("class", function(d){
+//                    if (d.completed)
+//                        return "complete";
+//                    return "incomplete";
+//                })
+                .attr("r", function (d) {
+                    return linearScaleBehaviorNode(d.user_ids.length);
+                });
+
+            behaviornode.select("text")
+            .attr("dx", function(d){
+                        return linearScaleBehaviorNode(d.user_ids.length) + 3;
+                    })
+            .text(function(d,i) { return i;});
+
+
+            behaviorlink.exit().remove();
+            behaviornode.exit().remove();
+
+            behaviorforce.start();
+
+        }
+        
+        
+        function distanceMapping(d){
+            return distanceBehaviorScale(d.similarity);
+        }
+
+
+        function behaviortick() {
+            // link ends
+            behaviorlink.attr("x1", function (d) {
+                return d.source.x;
+            })
+                .attr("y1", function (d) {
+                    return d.source.y;
+                })
+                .attr("x2", function (d) {
+                    return d.target.x;
+                })
+                .attr("y2", function (d) {
+                    return d.target.y;
+                });
+            behaviornode//.each(collide(.5))
+            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+        }
+        
+        // set minValue and maxValue
+        function getBehaviorNodeScale(dataset) {
+            var minValue = d3.min(dataset, function (d) {
+                return d.user_ids.length;
+            });
+            var maxValue = d3.max(dataset, function (d) {
+                return d.user_ids.length;
+            });
+            // if minValue and maxValue are the same,
+            // we'll make it such that the node takes the big size.
+            if (minValue == maxValue)
+                minValue -= 1;
+            return d3.scale.linear()
+                .domain([minValue, maxValue])
+                .range([minNodeSize, maxNodeSize]);
+        }
+        
+        function getBehaviorDistanceScale(dataset) {
+            var minValue = d3.min(dataset, function (d) {
+                return d.similarity;
+            });
+            var maxValue = d3.max(dataset, function (d) {
+                return d.similarity;
+            });
+
+            return d3.scale.linear()
+                .domain([minValue, maxValue])
+                .range([minDistance, maxDistance]);
+        }
+        
+        var showLinks = true;
+        function toggleShowLinks(){
+            if (showLinks){
+                d3.selectAll(".behaviorlink").style("stroke", "transparent");
+            }
+            else{
+                d3.selectAll(".behaviorlink").style("stroke", null);
+            }
+            
+            showLinks = !showLinks;
+        }
+        
+        // display info in textboxes
+        function displayInfo(d,i){
+            var nodeinfo = i + " (";
+            if (d.completed) nodeinfo = nodeinfo + "reach end state)";
+            else nodeinfo = nodeinfo + "does not reach end state)";
+            
+            d3.select("#selected-node-index").text(nodeinfo);
+            d3.select("#infobox").text(d.trajectory);
+            d3.select("#infobox-short").text(d.short_meaning);
+            
+            d3.select("#num-players-sequence").text(d.user_ids.length);
+            if (d.user_ids.length <= userIDLengthLimit)
+                d3.select("#players-sequence").text(d.user_ids);
+            else d3.select("#players-sequence").text(d.user_ids.slice(0,userIDLengthLimit) + ",....");
+        }
+        
+		var lowestOpacity = 0.2;
+        function behaviorDragstart(d,i) {
+            d3.event.sourceEvent.stopPropagation();
+//            d3.select(this).classed("fixed", d.fixed = true);
+            
+            // Highlight the behavior
+            clearHighlight();
+            applyOpacity(lowestOpacity);
+            highlightBehaviorNodeIndex(i, "red");
+            
+            archiveStyle(this);
+
+        }
+        
+        var archiveStyle = function(domNode){
+            prevStroke = d3.select(domNode).style("stroke");
+            prevFill = d3.select(domNode).style("fill");
+            prevStrokeOpa = d3.select(domNode).style("stroke-opacity");
+            prevFillOpa = d3.select(domNode).style("fill-opacity");
+        };
+        
+        var restoreStyle = function(domNode){
+            d3.select(domNode).style("stroke-opacity", prevStrokeOpa)
+                .style("stroke", prevStroke)            
+                .style("fill-opacity", prevFillOpa)
+                .style("fill", prevFill);
+        };
+        
+        function highlightNodeID(){
+            clearHighlight();
+            // set crowd opacity to 0.2
+            applyOpacity(lowestOpacity);
+            // highlight
+            nArray = d3.select("#playtrace-index").node().value.split(";");
+//            console.log(nArray);
+            for (var i=0; i<nArray.length; i++){
+                highlightBehaviorNodeIndex(parseInt(nArray[i]), fill(i));
+            }
+        }
+        
+        function showInfoNodeID(){
+            var index = parseInt(d3.select("#playtrace-show-info").node().value);
+            displayInfo(data.trajectories[index], index);
+        }
+        /*************************** Highlighting ******************/
+        
+        
+        function clearHighlight(){
+            // clear all styles for state graph
+            d3.selectAll(".statelink,.statenode").style("stroke-opacity", null)
+            .style("stroke", null)
+            .style("fill", null)
+            .style("fill-opacity", null);
+            
+            
+            d3.selectAll(".statenode").select("text")
+            .style("fill", null)
+            .style("fill-opacity", null);
+            
+            // clear behavior graph
+            d3.selectAll(".behaviornode").style("stroke-opacity", null)
+            .style("stroke", null)
+            .style("fill", null)
+            .style("fill-opacity", null);
+            
+            d3.selectAll(".behaviornode circle").style("fill", null).style("stroke", null);
+            
+            applyOpacity(currentOpacity);
+            
+            displayingFreq = false;
+        }
+        
+        
+        function highlightUserID(){
+        
+            clearHighlight();
+            applyOpacity(lowestOpacity);
+            input = d3.select("#userID").node().value;
+            
+            // 1. find the user traj from the trajectories
+                
+            userIDs = input.split(";");
+
+            var id = 0;
+            _.each(userIDs, function(userID){
+                var trajIndex=-1;
+                
+                for(var i=0; i<data.trajectories.length; i++){
+                    if (_.indexOf(data.trajectories[i].user_ids, userID.trim()) > -1){
+                        trajIndex = i;
+                        break;
+                    }                        
+                }
+
+                if (trajIndex >= 0){
+                    // 2 is red
+                    highlightBehaviorNodeIndex(trajIndex, fill(id));
+                    behaviornodePopup.style("opacity", 1.0)
+                      .html(generateBehaviorNodePopup(data.trajectories[trajIndex]));
+
+                    fullTracePopup.style("opacity", 1.0)
+                      .html(generateFullTracePopup(data.trajectories[trajIndex]));
+
+                    id += 1;
+                }
+                else{
+                    alert('cant find');
+                }
+            });
+        }
+        
+        function highlightBehaviorNodeIndex(index, color){
+            
+            highlightTraj(data.trajectories[index], color);
+            highlightBehaviorNode(index, color);
+            displayInfo(data.trajectories[index], index);
+            
+            displayingFreq = true;
+        }
+        
+        function highlightBehaviorNode(nodeToHighlight, color){
+            d3.select("#behaviornode"+nodeToHighlight).style("stroke-opacity", 1)
+            .style("stroke", color)
+            .style("fill", color)
+            .style("fill-opacity", 1);
+            // somehow have to set fill for cirle only.
+            d3.select("#behaviornode"+nodeToHighlight).select("circle")
+            .style("stroke", color)
+            .style("fill", color);
+        }
+        
+        function toggleKthTrajectories(){
+            clearHighlight();
+            applyOpacity(lowestOpacity);
+            var numHighlight = parseInt(d3.select("#number-highlight").node().value);
+            if (data.hasOwnProperty('trajectories')&& numHighlight <= data.trajectories.length){
+
+                numFrequent = (numHighlight-1 + data.trajectories.length) % data.trajectories.length;
+                
+                highlightBehaviorNodeIndex(numFrequent, fill(numFrequent));
+                
+            }
+            
+        }
+
+        function toggleHighlightFreqTrajectories(){
+            clearHighlight();
+            applyOpacity(lowestOpacity);
+            var numHighlight = parseInt(d3.select("#number-highlight").node().value);
+            if (data.hasOwnProperty('trajectories') && numHighlight <= data.trajectories.length){
+
+                numFrequent = (numHighlight + data.trajectories.length) % data.trajectories.length;
+                
+                for (var i=0; i<numFrequent; i++){
+                    highlightBehaviorNodeIndex(i, fill(i));
+                }
+                
+            }
+            
+        }
+        
+        function highlightTraj(trajString, color){
+            
+            // 1. break the trajectory into nodes and statelinks ID
+            ids = trajToIDs(trajString);
+            
+            // 2. assign the color to a corresponding list of colors.
+            d3.selectAll(ids)
+            .style("stroke", color)
+            .style("stroke-opacity", 1);
+        }
+        
+        
+        // return: "#statenode975, #statelink975_0, #statenode1015, #statelink1015_0, #statenode475 "
+        // for "975, 0, 1015, 1015_0, 475"
+        function trajToIDs(traj){
+            
+            pArray = traj.trajectory.split(",");
+            
+            selectArray = "";
+            
+            for(var i=0; i<pArray.length; i++){
+                if (i%2 == 0){
+                    selectArray += "#statenode" + pArray[i].trim();
+                    
+                    if (i < pArray.length-1) selectArray += ",";
+                }
+                else 
+                    selectArray += "#statelink" + pArray[i].trim() + ",";
+            }
+            
+            return selectArray;
+        }
+        
+        var currentOpacity = 0.7;
+        
+        function incrementOpacity(){
+            
+            currentOpacity = currentOpacity + 0.1;
+            if (currentOpacity > 1) currentOpacity = 1;
+            applyOpacity(currentOpacity);         
+
+        }
+        
+        function decrementOpacity(){
+            
+            currentOpacity = currentOpacity - 0.1;
+            if (currentOpacity < 0.2) currentOpacity = 0.2;
+                      
+            applyOpacity(currentOpacity);
+        }
+        
+        function applyOpacity(opacityValue){
+            
+            d3.selectAll(".statelink,.statenode,.behaviorlink,.behaviornode")
+            .style("stroke-opacity", opacityValue)
+            .style("fill-opacity", opacityValue);    
+        }
+        
+        function freezeLayout(){
+            // still moving
+            if (behaviorforce.alpha() > 0){
+                stateforce.stop();
+                behaviorforce.stop();
+            }
+            else{
+                stateforce.resume();
+                behaviorforce.resume();                
+            }
+        }
+
+        var allCurrentlyFixed = false;
+        var fixLayout = function(){
+            allCurrentlyFixed = !allCurrentlyFixed;
+            d3.selectAll(".statenode,.behaviornode")
+                .classed("fixed", function(d){ d.fixed = allCurrentlyFixed;});
+        };
+
+        
+        
+        var incrementGraph = function(forceChoice){
+            var force = stateforce;
+            if (forceChoice > 0)
+                force = behaviorforce;
+            var currentCharge = force.charge();
+            force.charge(currentCharge*1.5).start();
+        };
+        
+        var decrementGraph = function(forceChoice){
+            var force = stateforce;
+            if (forceChoice > 0)
+                force = behaviorforce;
+            var currentCharge = force.charge();
+            force.charge(currentCharge*0.7).start();
+        };
+        
+        var unfixAllNodes = function(graphChoice){
+            if (graphChoice == 0)
+                d3.selectAll(".statenode").classed("fixed", function(d){d.fixed = false; return false;});
+            else 
+                d3.selectAll(".behaviornode").classed("fixed", function(d){d.fixed = false; return false;});
+        };
+        
+        
+        var fixAllNodes = function(graphChoice){
+            if (graphChoice == 0)
+                d3.selectAll(".statenode").classed("fixed", function(d){d.fixed = true; return true;});
+            else 
+                d3.selectAll(".behaviornode").classed("fixed", function(d){d.fixed = true; return true;});
+        };
+
+    </script>
+</body>
